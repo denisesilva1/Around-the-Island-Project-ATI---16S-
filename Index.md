@@ -15,5 +15,5 @@ Environmental DNA (eDNA) samples were collected from ~200 sites around the islan
 ---
 
 **Citation:**  
-Silva et al. (2025). *Around the Island (ATI) 16S Project: Coral reef microbial diversity and environmental drivers in Mo'orea, French Polynesia.*  
+Silva et al. (2025). *Around the Island (ATI) 16S Project: Coral reef microbial diversity and environmental drivers in Moorea, French Polynesia.*  
 Data and code available at [this GitHub repository](https://github.com/denisesilva1/Around-the-Island-Project-ATI---16S-).
