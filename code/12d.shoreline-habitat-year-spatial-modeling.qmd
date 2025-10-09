@@ -1,0 +1,374 @@
+---
+title: "Shore spatial regression - water chem + alpha diversity"
+format: 
+  html:
+    self-contained: true
+editor: source
+editor_options: 
+  chunk_output_type: console
+---
+
+## Summary of Results
+
+-   **Model performance**
+    -   Predictive ability (pseudo-R²) ranged from low to moderate across models.
+    -   Highest explanatory power: δ¹⁵N (R² ≈ 0.52) and Microbial Chao1 (R² ≈ 0.37).
+    -   Lowest explanatory power: Microbial evenness (R² ≈ 0.09) and Shannon diversity (R² ≈ 0.12).
+-   **Variation among years**
+    -   **Ammonia** was significantly higher in 2022 than in 2021 or 2023.
+    -   **Nitrite + Nitrate** increased in 2022, then declined in 2023 (all pairwise contrasts significant).
+    -   **Phosphate** concentrations declined steadily across years, with significant decreases each year.
+    -   **δ¹⁵N** peaked in 2022, then dropped sharply in 2023.
+    -   **δ¹³C** increased (less negative) from 2021 to 2022, with a slight decrease in 2023.
+    -   **Microbial richness and Chao1** were highest in 2022 and lowest in 2023.
+    -   **Shannon diversity** was slightly higher in 2022 than 2021 and 2023.
+    -   **Phylogenetic diversity** was elevated in 2022 relative to 2021 and 2023.
+    -   **Evenness** showed small but significant differences, with 2021 \> 2022 and 2023 ≈ 2021.
+-   **Variation among shores**
+    -   **Ammonia** concentrations were lower at the North and Southeast shores compared to Southwest (significant contrasts).
+    -   **Other water chemistry metrics** (NO₂⁻+NO₃⁻, phosphate, δ¹⁵N, δ¹³C) did not differ significantly among shores.
+    -   **Alpha diversity indices** (richness, Chao1, Shannon, PD, evenness) showed no consistent significant differences among shores.
+-   **Variation among habitats**
+    -   **Ammonia** was lowest at reef crest and reef pass; differences were not strongly significant.
+    -   **Nitrite + Nitrate** was higher in fringing reef and bay compared to mid-lagoon and reef crest (several significant contrasts).
+    -   **Phosphate** showed no significant habitat differences.
+    -   **δ¹⁵N** was significantly higher in bay habitats compared to fringing reef, mid-lagoon, and reef pass.
+    -   **δ¹³C** was enriched (less negative) in fringing reef compared to reef crest and mid-lagoon.
+    -   **Microbial richness and Chao1** were higher in fringing reef compared to reef crest and reef pass.
+    -   **Shannon diversity** was lower in bay compared to all reef habitats.
+    -   **Phylogenetic diversity** was highest in fringing reef and mid-lagoon, lower in bay and reef crest.
+    -   **Evenness** was lowest in bay, significantly lower than all other habitats.
+
+Table 1: Model performance metrics for water chemistry and microbial diversity models. Includes sample size (n), number of parameters (p), fit statistics, and predictive performance (bias, MSPE, RMSPE, correlation).
+
+| Variable | n | p | AIC | BIC | logLik | pseudo.r² | bias | MSPE | RMSPE | cor² |
+|---------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
+| Ammonia | 566 | 9 | 1119 | 1136 | -555 | 0.310 | 0.00007 | 0.403 | 0.635 | 0.328 |
+| Nitrite + Nitrate | 566 | 9 | 56.9 | 74.3 | -24.5 | 0.311 | -0.00007 | 0.0598 | 0.244 | 0.307 |
+| Phosphate | 566 | 9 | -2056 | -2039 | 1032 | 0.214 | 0.00000 | 0.00133 | 0.0365 | 0.235 |
+| δ¹⁵N | 566 | 9 | 953 | 971 | -473 | 0.520 | 0.00058 | 0.282 | 0.531 | 0.562 |
+| δ¹³C | 566 | 9 | 1361 | 1378 | -677 | 0.187 | -0.00219 | 0.564 | 0.751 | 0.441 |
+| Microbial richness | 566 | 9 | 6856 | 6874 | -3424 | 0.296 | -0.077 | 10560 | 103 | 0.515 |
+| Microbial Chao1 | 566 | 9 | 7322 | 7339 | -3657 | 0.369 | -0.083 | 24877 | 158 | 0.527 |
+| Microbial Shannon diversity | 566 | 9 | 505 | 522 | -248 | 0.119 | -0.00023 | 0.122 | 0.349 | 0.382 |
+| Microbial phylogenetic diversity | 566 | 9 | 4506 | 4524 | -2249 | 0.262 | -0.016 | 152 | 12.3 | 0.539 |
+| Microbial evenness | 566 | 9 | -1966 | -1949 | 987 | 0.087 | -0.00003 | 0.00147 | 0.0383 | 0.312 |
+
+------------------------------------------------------------------------
+
+Table 2: Variation in water chemistry and microbial diversity metrics among years. Pairwise emmeans comparisons show mean values (emmean ± SE) and Tukey-adjusted contrasts. Results averaged over shores and habitats.
+
+| Variable | 2021 (emmean) | 2022 (emmean) | 2023 (emmean) | 2021–2022 (Δ, p) | 2021–2023 (Δ, p) | 2022–2023 (Δ, p) |
+|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
+| Ammonia | 0.562±0.24 | 1.465±0.24 | 0.653±0.24 | -0.903, \<0.0001 | -0.090, 0.33 | 0.813, \<0.0001 |
+| NO₂⁻+NO₃⁻ | 0.304±0.02 | 0.664±0.02 | 0.471±0.02 | -0.360, \<0.0001 | -0.167, \<0.0001 | 0.193, \<0.0001 |
+| Phosphate | 0.154±0.01 | 0.141±0.01 | 0.112±0.01 | 0.013, 0.0007 | 0.043, \<0.0001 | 0.029, \<0.0001 |
+| δ¹⁵N | 3.30±0.10 | 3.74±0.11 | 2.48±0.11 | -0.437, \<0.0001 | 0.823, \<0.0001 | 1.259, \<0.0001 |
+| δ¹³C | -10.01±0.12 | -9.36±0.12 | -9.53±0.12 | -0.649, \<0.0001 | -0.488, \<0.0001 | 0.161, 0.059 |
+| Richness | 299±32.8 | 394±32.9 | 262±32.8 | -95.5, \<0.0001 | 36.3, 0.0002 | 131.9, \<0.0001 |
+| Chao1 | 403±85.8 | 604±85.8 | 375±85.7 | -202, \<0.0001 | 27.7, 0.13 | 229.5, \<0.0001 |
+| Shannon | 4.14±0.06 | 4.29±0.06 | 4.06±0.06 | -0.149, \<0.0001 | 0.082, 0.03 | 0.231, \<0.0001 |
+| Phylogenetic div | 46.2±4.2 | 57.4±4.2 | 44.1±4.2 | -11.2, \<0.0001 | 2.12, 0.13 | 13.36, \<0.0001 |
+| Evenness | 0.739±0.01 | 0.727±0.01 | 0.740±0.01 | 0.012, 0.0025 | -0.001, 0.97 | -0.013, 0.0011 |
+
+------------------------------------------------------------------------
+
+Table 3: Variation in water chemistry and microbial diversity metrics among shores. Pairwise emmeans comparisons show means and Tukey-adjusted contrasts. Results averaged over years and habitats.
+
+| Variable | N (emmean) | SE (emmean) | SW (emmean) | N–SE (Δ, p) | N–SW (Δ, p) | SE–SW (Δ, p) |
+|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
+| Ammonia | 0.752±0.26 | 0.734±0.27 | 1.194±0.25 | 0.018, 1.0 | -0.441, 0.02 | -0.459, 0.02 |
+| NO₂⁻+NO₃⁻ | 0.514±0.03 | 0.446±0.03 | 0.478±0.03 | 0.069, 0.21 | 0.037, 0.59 | -0.032, 0.69 |
+| Phosphate | 0.136±0.01 | 0.137±0.01 | 0.135±0.01 | -0.001, 0.99 | 0.001, 0.99 | 0.002, 0.98 |
+| δ¹⁵N | 3.32±0.16 | 3.13±0.17 | 3.06±0.14 | 0.195, 0.67 | 0.259, 0.40 | 0.064, 0.94 |
+| δ¹³C | -9.70±0.18 | -9.81±0.20 | -9.39±0.17 | 0.110, 0.91 | -0.310, 0.39 | -0.421, 0.20 |
+| Richness | 338±41.2 | 288±43.3 | 329±37.8 | 50.2, 0.53 | 8.9, 0.97 | -41.3, 0.57 |
+| Chao1 | 477±94.2 | 423±97.0 | 481±88.1 | 53.7, 0.73 | -4.5, 1.0 | -58.1, 0.61 |
+| Shannon | 4.31±0.09 | 4.00±0.10 | 4.18±0.09 | 0.311, 0.06 | 0.134, 0.52 | -0.177, 0.32 |
+| Phylogenetic div | 53.0±5.35 | 44.5±5.60 | 50.2±4.88 | 8.43, 0.36 | 2.81, 0.86 | -5.62, 0.54 |
+| Evenness | 0.748±0.01 | 0.726±0.01 | 0.732±0.01 | 0.022, 0.32 | 0.016, 0.48 | -0.006, 0.89 |
+
+------------------------------------------------------------------------
+
+Table 4: Variation in water chemistry and microbial diversity metrics among habitats. Pairwise emmeans comparisons show means and Tukey-adjusted contrasts. Results averaged over years and shores.
+
+| Variable | Bay (emmean) | Fringing (emmean) | Mid lagoon | Reef crest | Reef pass | Key contrasts (Δ, p) |
+|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
+| Ammonia | 1.05±0.30 | 0.95±0.24 | 0.89±0.24 | 0.79±0.24 | 0.78±0.25 | Fringing–Reef crest: 0.163, p=0.15 |
+| NO₂⁻+NO₃⁻ | 0.596±0.06 | 0.538±0.02 | 0.411±0.03 | 0.391±0.02 | 0.461±0.04 | Fringing–Mid: 0.127, p\<0.001; Fringing–Reef crest: 0.147, p\<0.001 |
+| Phosphate | 0.149±0.01 | 0.137±0.01 | 0.129±0.01 | 0.134±0.01 | 0.130±0.01 | No significant pairwise differences |
+| δ¹⁵N | 3.62±0.18 | 3.12±0.11 | 3.00±0.11 | 3.12±0.11 | 3.00±0.13 | Bay–Fringing: 0.503, p=0.023; Bay–Mid: 0.618, p=0.005 |
+| δ¹³C | -10.00±0.28 | -9.27±0.12 | -9.41±0.14 | -9.91±0.13 | -9.58±0.17 | Fringing–Reef crest: 0.637, p\<0.0001; Mid–Reef crest: 0.501, p=0.0001 |
+| Richness | 269±50.4 | 370±33.0 | 324±33.9 | 307±32.7 | 322±36.6 | Fringing–Reef crest: 63.1, p=0.004 |
+| Chao1 | 407±105 | 544±85.8 | 462±85.7 | 431±83.6 | 460±88.2 | Fringing–Mid: 81.3, p=0.017; Fringing–Reef crest: 112.9, p\<0.001 |
+| Shannon | 3.74±0.13 | 4.26±0.06 | 4.30±0.07 | 4.29±0.07 | 4.23±0.08 | Bay–Fringing: -0.520, p=0.0004; Bay–Mid: -0.560, p=0.0003 |
+| Phylogenetic div | 43.5±6.38 | 56.7±4.26 | 49.8±4.36 | 45.7±4.21 | 50.5±4.68 | Fringing–Mid: 6.83, p=0.019; Fringing–Reef crest: 10.98, p\<0.0001 |
+| Evenness | 0.685±0.01 | 0.734±0.01 | 0.754±0.01 | 0.758±0.01 | 0.744±0.01 | Bay–Mid: -0.068, p\<0.0001; Bay–Reef crest: -0.073, p\<0.0001 |
+
+```{r setup, include=FALSE}
+# Set global options for all chunks
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## Data prep
+
+```{r data, warning=F, message=F}
+#| code-fold: true
+
+library(tidyverse)
+library(phyloseq)
+library(spmodel)
+library(sf)
+library(emmeans)
+library(ggbeeswarm)
+library(ggsignif)
+library(RColorBrewer)
+
+
+shore_colors <- c('#1f78b4', '#fb9a99', '#33a02c')
+year_colors <- c('#0868AC','#9E9AC8','#FEB24C')
+habitat_colors <- brewer.pal(5, "Set1")
+
+level <- 'asv'; level2 <- 'ASV'
+
+alpha_div <-
+  readr::read_rds(file = paste0('./data/ati-alpha-diversity-metrics-', level, '.rds')) %>% 
+  data.frame() %>% 
+  dplyr::select(Year, Site, Habitat, Island_shore, Ammonia, dN15, dC13, 
+                Nitrite_plus_Nitrate, Phosphate, Latitude, Longitude,
+                Microbial_Richness, Microbial_Chao1, Microbial_Shannon_Diversity, 
+                Microbial_Phylogenetic_Diversity, Microbial_Evenness) %>% 
+  dplyr::mutate(Year = as.character(Year)) %>% 
+  na.omit() %>% 
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) %>% 
+  st_transform(crs = 3305)
+
+boxplot_theme <-
+  theme(
+    axis.title.x = element_text(size = 16, face = "bold"),
+    axis.title.y = element_text(size = 16, face = "bold"),
+    axis.text.x  = element_text(size = 14),
+    axis.text.y  = element_text(size = 14),
+    legend.position = 'none'
+  )
+
+mod_var <- 
+  c('Ammonia','Nitrite_plus_Nitrate','Phosphate','dN15','dC13',
+    'Microbial_Richness','Microbial_Chao1','Microbial_Shannon_Diversity',
+    'Microbial_Phylogenetic_Diversity','Microbial_Evenness')
+
+labels <-
+  c(expression("Ammonia ("*mu*"M)"), expression("Nitrite+Nitrate ("*mu*"M)"),
+    expression("Phosphate ("*mu*"M)"), "δ15N (\u2030)", "δ13C (\u2030)",
+    "Microbial Richness", "Chao1 Richness", "Shannon Diversity", 
+    "Phylogenetic Diversity", "Microbial Evenness")
+
+```
+
+## Models and plots
+
+```{r models, warning=F, message=F, eval=T}
+#| code-fold: true
+
+for(i in 1:length(mod_var)){
+  
+  cat("=== Variable:", mod_var[i], "===\n")
+  
+  formula <- 
+    as.formula(paste(mod_var[i], "~ Year + Island_shore + Habitat"))
+  
+  sp.mod <- 
+    spmodel::splm(formula = formula,
+                  data = alpha_div,
+                  random = ~ Site,
+                  estmethod = 'reml',
+                  spcov_type = 'gaussian')
+  
+  cat("\nModel metrics:\n")
+  spmodel::glance(sp.mod) %>% print()
+  spmodel::loocv(sp.mod) %>% print()
+  
+  cat("\nemmeans pairwise comparison among years:\n")
+  
+  # ---- 1) emmeans by Island shore ----
+  em <- emmeans::emmeans(sp.mod, ~ Year)
+  
+  print(em)
+  print(pairs(em))
+  
+  # ---- 2) Tidy pairwise tests for ggsignif (no facetting needed) ----
+  pairs_df <- pairs(em) %>%
+    summary(adjust = "tukey") %>%
+    tibble::as_tibble() %>%
+    tidyr::separate(contrast, into = c("group1","group2"), sep = " - ") %>%
+    mutate(
+      group1 = as.character(group1),
+      group2 = as.character(group2),
+      # pretty p-value labels
+      label  = scales::pvalue(p.value),
+      label  = ifelse(label == "<0.001", "p<0.001", paste0("p=", label))
+    )
+  
+  # y positions: stack 3 brackets above the tallest box
+  y_base  <- max(alpha_div[[mod_var[i]]], na.rm = TRUE)
+  range_y <- diff(range(alpha_div[[mod_var[i]]], na.rm = TRUE))
+  pairs_df <- pairs_df %>%
+    arrange(p.value) %>%                           # optional: tallest bracket for smallest p
+    mutate(y_position = y_base + row_number() * (0.06 * range_y),
+           group1 = group1 %>% str_remove("^Year"),
+           group2 = group2 %>% str_remove("^Year"))
+  
+  # ---- 3) Plot ----
+  p <-
+  ggplot(alpha_div, aes(x = Year, y = .data[[mod_var[i]]], color = Year)) +
+    geom_boxplot(outlier.shape = NA, alpha = 0.9, size = 0.8) +
+    geom_quasirandom(size = 2.3, alpha = 0.35, stroke = NA) +
+    scale_color_manual(values = year_colors, 
+                       guide = "none") +
+    ggsignif::geom_signif(
+      data = pairs_df,
+      aes(xmin = group1, xmax = group2, annotations = label, y_position = y_position),
+      inherit.aes = FALSE,
+      manual = TRUE,
+      tip_length = 0.01,
+      vjust = 0.2,
+      textsize = 3.6
+    ) +
+    labs(x = 'Year', y = labels[i]) +
+    theme_bw() 
+  
+  
+  print(p)
+  
+  ggsave(plot = p, 
+         filename = paste0('./output/plots/', 
+                           mod_var[i],
+                           '_across_years_bxplt_21.22.23.png'),
+         dpi = 1000,
+         width = 5,
+         height = 4)
+  
+  cat("\nemmeans pairwise comparison among shores:\n")
+  
+  # ---- 1) emmeans by Island shore ----
+  em <- emmeans::emmeans(sp.mod, ~ Island_shore)
+  
+  print(em)
+  print(pairs(em))
+  
+  # ---- 2) Tidy pairwise tests for ggsignif (no facetting needed) ----
+  pairs_df <- pairs(em) %>%
+    summary(adjust = "tukey") %>%
+    tibble::as_tibble() %>%
+    tidyr::separate(contrast, into = c("group1","group2"), sep = " - ") %>%
+    mutate(
+      group1 = as.character(group1),
+      group2 = as.character(group2),
+      # pretty p-value labels
+      label  = scales::pvalue(p.value),
+      label  = ifelse(label == "<0.001", "p<0.001", paste0("p=", label))
+    )
+  
+  # y positions: stack 3 brackets above the tallest box
+  y_base  <- max(alpha_div[[mod_var[i]]], na.rm = TRUE)
+  range_y <- diff(range(alpha_div[[mod_var[i]]], na.rm = TRUE))
+  pairs_df <- pairs_df %>%
+    arrange(p.value) %>%                           # optional: tallest bracket for smallest p
+    mutate(y_position = y_base + row_number() * (0.06 * range_y),
+           group1 = group1 %>% str_remove("^Year"),
+           group2 = group2 %>% str_remove("^Year"))
+  
+  # ---- 3) Plot ----
+  p <-
+  ggplot(alpha_div, aes(x = Island_shore, y = .data[[mod_var[i]]], color = Island_shore)) +
+    geom_boxplot(outlier.shape = NA, alpha = 0.9, size = 0.8) +
+    geom_quasirandom(size = 2.3, alpha = 0.35, stroke = NA) +
+    scale_color_manual(values = shore_colors, 
+                       guide = "none") +
+    ggsignif::geom_signif(
+      data = pairs_df,
+      aes(xmin = group1, xmax = group2, annotations = label, y_position = y_position),
+      inherit.aes = FALSE,
+      manual = TRUE,
+      tip_length = 0.01,
+      vjust = 0.2,
+      textsize = 3.6
+    ) +
+    labs(x = 'Island Shore', y = labels[i]) +
+    theme_bw() 
+  
+  print(p)
+  
+  ggsave(plot = p, 
+         filename = paste0('./output/plots/', 
+                           mod_var[i],
+                           '_across_shore_bxplt_21.22.23.png'),
+         dpi = 1000,
+         width = 5,
+         height = 5)
+  
+    cat("\nemmeans pairwise comparison among habitats:\n")
+  
+  # ---- 1) emmeans by Habitat ----
+  em <- emmeans::emmeans(sp.mod, ~ Habitat)
+  
+  print(em)
+  print(pairs(em))
+  
+  # ---- 2) Tidy pairwise tests for ggsignif (no facetting needed) ----
+  pairs_df <- pairs(em) %>%
+    summary(adjust = "tukey") %>%
+    tibble::as_tibble() %>%
+    tidyr::separate(contrast, into = c("group1","group2"), sep = " - ") %>%
+    mutate(
+      group1 = as.character(group1),
+      group2 = as.character(group2),
+      # pretty p-value labels
+      label  = scales::pvalue(p.value),
+      label  = ifelse(label == "<0.001", "p<0.001", paste0("p=", label))
+    )
+  
+  # y positions: stack 3 brackets above the tallest box
+  y_base  <- max(alpha_div[[mod_var[i]]], na.rm = TRUE)
+  range_y <- diff(range(alpha_div[[mod_var[i]]], na.rm = TRUE))
+  pairs_df <- pairs_df %>%
+    arrange(p.value) %>%                           # optional: tallest bracket for smallest p
+    mutate(y_position = y_base + row_number() * (0.06 * range_y),
+           group1 = group1 %>% str_remove("^Year"),
+           group2 = group2 %>% str_remove("^Year"))
+  
+  # ---- 3) Plot ----
+  p <-
+  ggplot(alpha_div, aes(x = Habitat, y = .data[[mod_var[i]]], color = Habitat)) +
+    geom_boxplot(outlier.shape = NA, alpha = 0.9, size = 0.8) +
+    geom_quasirandom(size = 2.3, alpha = 0.35, stroke = NA) +
+    scale_color_manual(values = habitat_colors, 
+                       guide = "none") +
+    ggsignif::geom_signif(
+      data = pairs_df,
+      aes(xmin = group1, xmax = group2, annotations = label, y_position = y_position),
+      inherit.aes = FALSE,
+      manual = TRUE,
+      tip_length = 0.01,
+      vjust = 0.2,
+      textsize = 3.6
+    ) +
+    labs(x = 'Habitat', y = labels[i]) +
+    theme_bw() 
+  
+  print(p)
+  
+  ggsave(plot = p, 
+         filename = paste0('./output/plots/', 
+                           mod_var[i],
+                           '_across_habitat_bxplt_21.22.23.png'),
+         dpi = 1000,
+         width = 5,
+         height = 5)
+  
+}
+
+```

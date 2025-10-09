@@ -1,0 +1,286 @@
+---
+title: "Shore spatial regression - water chem + alpha diversity"
+format: 
+  html:
+    self-contained: true
+editor: source
+editor_options: 
+  chunk_output_type: console
+---
+
+## Summary of Results
+
+-   **Nutrients**
+    -   Ammonia differed strongly among shorelines in 2022 and 2023 (N \< SE, N \< SW, SE \< SW).\
+    -   Nitrate+Nitrite was higher on N vs SE shores in 2021.\
+    -   Phosphate showed no significant shoreline differences.
+-   **Stable isotopes**
+    -   δ¹³C was significantly lower on SW compared to N and SE shores in 2023.\
+    -   δ¹⁵N showed no clear differences among shorelines (one marginal result in 2022).
+-   **Microbial alpha diversity**
+    -   Shannon diversity was higher on N vs SE shores in 2023.\
+    -   No significant shoreline differences were detected for richness, Chao1, phylogenetic diversity, or evenness.
+-   **Model fits**
+    -   Models for nutrients and isotopes generally explained moderate variance (pseudo-R² \~0.23–0.54).\
+    -   Microbial alpha-diversity models explained lower variance (pseudo-R² \~0.11–0.37).\
+    -   δ¹⁵N, Ammonia, and δ¹³C had the strongest model fits.
+
+| Variable | Pseudo-R² | RMSPE | cor² | Year | Significant Contrasts (estimate ± SE, p) |
+|-----------|----------|----------|----------|----------|----------------------|
+| **Ammonia** | 0.401 | 0.595 | 0.409 | 2022 | N \< SE (−0.69 ± 0.18, p = 0.0004); N \< SW (−0.60 ± 0.16, p = 0.0006) |
+|  |  |  |  | 2023 | N \< SW (−0.73 ± 0.16, p \< 0.0001); SE \< SW (−0.80 ± 0.17, p \< 0.0001) |
+| **Nitrite+Nitrate** | 0.329 | 0.243 | 0.315 | 2021 | N \> SE (+0.17 ± 0.05, p = 0.0049) |
+| **Phosphate** | 0.226 | 0.037 | 0.237 | — | No significant contrasts |
+| **δ¹⁵N** | 0.539 | 0.526 | 0.570 | — | No significant contrasts (one marginal N \> SW in 2022, p = 0.064) |
+| **δ¹³C** | 0.284 | 0.703 | 0.510 | 2023 | N \< SW (−1.03 ± 0.25, p = 0.0001); SE \< SW (−0.85 ± 0.26, p = 0.0028) |
+| **Microbial Richness** | 0.302 | 103 | 0.513 | — | No significant contrasts |
+| **Microbial Chao1** | 0.372 | 159 | 0.521 | — | No significant contrasts |
+| **Shannon Diversity** | 0.129 | 0.350 | 0.380 | 2023 | N \> SE (+0.38 ± 0.14, p = 0.022) |
+| **Phylogenetic Div.** | 0.267 | 12.4 | 0.537 | — | No significant contrasts |
+| **Evenness** | 0.108 | 0.038 | 0.315 | — | No significant contrasts |
+
+: Table 1. Spatial GLS model metrics and significant pairwise shoreline contrasts for water chemistry, stable isotopes, and microbial alpha diversity. Models included random site effects and Gaussian spatial covariance. Only significant (p \< 0.05) or marginal contrasts (p \< 0.1) are shown. {#tbl-water-chem-alpha}
+
+| Variable                   | Pseudo-R² | RMSPE | cor²  |
+|----------------------------|-----------|-------|-------|
+| **Ammonia**                | 0.401     | 0.595 | 0.409 |
+| **Nitrite+Nitrate**        | 0.329     | 0.243 | 0.315 |
+| **Phosphate**              | 0.226     | 0.037 | 0.237 |
+| **δ¹⁵N**                   | 0.539     | 0.526 | 0.570 |
+| **δ¹³C**                   | 0.284     | 0.703 | 0.510 |
+| **Microbial Richness**     | 0.302     | 103   | 0.513 |
+| **Microbial Chao1**        | 0.372     | 159   | 0.521 |
+| **Shannon Diversity**      | 0.129     | 0.350 | 0.380 |
+| **Phylogenetic Diversity** | 0.267     | 12.4  | 0.537 |
+| **Evenness**               | 0.108     | 0.038 | 0.315 |
+
+: Table 2. Model performance diagnostics (pseudo-R², RMSPE, and cor²) for spatial GLS models of water chemistry, stable isotopes, and microbial alpha diversity. {#tbl-water-chem-alpha-metrics}
+
+```{r setup, include=FALSE}
+# Set global options for all chunks
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## Data prep
+
+```{r data, warning=F, message=F}
+#| code-fold: true
+
+library(tidyverse)
+library(phyloseq)
+library(spmodel)
+library(sf)
+library(emmeans)
+library(ggbeeswarm)
+library(ggsignif)
+
+shore_colors <- c('#1f78b4', '#fb9a99', '#33a02c')
+year_colors <- c('#0868AC','#9E9AC8','#FEB24C')
+
+level <- 'asv'; level2 <- 'ASV'
+
+alpha_div <-
+  readr::read_rds(file = paste0('./data/ati-alpha-diversity-metrics-', level, '.rds')) %>% 
+  data.frame() %>% 
+  dplyr::select(Year, Site, Habitat, Island_shore, Ammonia, dN15, dC13, 
+                Nitrite_plus_Nitrate, Phosphate, Latitude, Longitude,
+                Microbial_Richness, Microbial_Chao1, Microbial_Shannon_Diversity, 
+                Microbial_Phylogenetic_Diversity, Microbial_Evenness) %>% 
+  dplyr::mutate(Year = as.character(Year)) %>% 
+  na.omit() %>% 
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) %>% 
+  st_transform(crs = 3305)
+
+boxplot_theme <-
+  theme(
+    axis.title.x = element_text(size = 16, face = "bold"),
+    axis.title.y = element_text(size = 16, face = "bold"),
+    axis.text.x  = element_text(size = 14),
+    axis.text.y  = element_text(size = 14),
+    legend.position = 'none'
+  )
+
+mod_var <- 
+  c('Ammonia','Nitrite_plus_Nitrate','Phosphate','dN15','dC13',
+    'Microbial_Richness','Microbial_Chao1','Microbial_Shannon_Diversity',
+    'Microbial_Phylogenetic_Diversity','Microbial_Evenness')
+
+labels <-
+  c(expression("Ammonia ("*mu*"M)"), expression("Nitrite+Nitrate ("*mu*"M)"),
+    expression("Phosphate ("*mu*"M)"), "δ15N (\u2030)", "δ13C (\u2030)",
+    "Microbial Richness", "Chao1 Richness", "Shannon Diversity", 
+    "Phylogenetic Diversity", "Microbial Evenness")
+
+```
+
+## Models and plots
+
+```{r models, warning=F, message=F, eval=T}
+#| code-fold: true
+
+for(i in 1:length(mod_var)){
+  
+  cat("=== Variable:", mod_var[i], "===\n")
+  
+  formula <- 
+    as.formula(paste(mod_var[i], "~ Year * Island_shore + Habitat"))
+  
+  sp.mod <- 
+    spmodel::splm(formula = formula,
+                  data = alpha_div,
+                  random = ~ Site,
+                  estmethod = 'reml',
+                  spcov_type = 'gaussian')
+  
+  cat("\nModel metrics:\n")
+  spmodel::glance(sp.mod) %>% print()
+  spmodel::loocv(sp.mod) %>% print()
+  
+  cat("\nemmeans pairwise comparison among shore within year:\n")
+  em <- 
+    emmeans::emmeans(sp.mod, ~ Island_shore, by = 'Year')
+  
+  pairs(em) %>% print()
+  
+  ## 1) Tidy pairwise tests for ggsignif
+  pairs_df <- 
+    pairs(em) %>%
+    summary(adjust = "tukey") %>%
+    as_tibble() %>%
+    separate(contrast, into = c("group1", "group2"), sep = " - ") %>%
+    mutate(
+      # make sure group names match x-axis categories exactly
+      group1 = as.character(group1),
+      group2 = as.character(group2),
+      label  = paste0("p=", scales::pvalue(p.value))) %>% 
+    mutate(label = ifelse(label == 'p=<0.001', 'p<0.001', label))
+  
+  ## 2) Give each comparison a y position per Year so brackets don’t overlap
+  yr_tops <- 
+    alpha_div %>%
+    group_by(Year) %>%
+    summarise(y_top = max(eval(sym(mod_var[i])), 
+                          na.rm = TRUE), .groups = "drop")
+  
+  range_y <- 
+    diff(range(alpha_div %>% 
+                 select(mod_var[i]) %>% 
+                 st_drop_geometry(), na.rm = TRUE))
+  
+  pairs_df <- 
+    pairs_df %>%
+    left_join(yr_tops, by = "Year") %>%
+    group_by(Year) %>%
+    mutate(
+      # stack 3 comparisons above the tallest box for that Year
+      y_position = y_top + (row_number()) * (0.06 * range_y)
+    ) %>%
+    ungroup()
+  
+  ## 3) Plot with ggsignif (manual = TRUE)
+  p <-
+    ggplot(alpha_div, aes(x = Island_shore, y = !!sym(mod_var[i]), color = Island_shore)) +
+    geom_boxplot(outlier.shape = NA, alpha = 0.9, size=0.8) +
+    geom_quasirandom(size = 2.5, alpha = 0.3, stroke = NA) +
+    scale_color_manual(values = shore_colors) +
+    facet_wrap(~ Year) +
+    ggsignif::geom_signif(
+      data = pairs_df,
+      aes(xmin = group1, xmax = group2, annotations = label, y_position = y_position),
+      inherit.aes = FALSE,
+      manual = TRUE,          # <-- REQUIRED when mapping via data frame
+      tip_length = 0.01,
+      vjust = 0.2,
+      textsize = 3.6) +
+    labs(y = labels[i],#expression("Ammonia ("*mu*"M)"),
+         x = 'Island Shore') +
+    theme_bw() +
+    boxplot_theme
+  
+  #print(p)
+  
+  ggsave(plot = p, 
+       filename = paste0('./output/plots/', 
+                         mod_var[i],
+                         '_years_across_shores_bxplt_21.22.23.png'),
+       dpi = 1000,
+       width = 7,
+       height = 5)
+  
+  cat("\nemmeans pairwise comparison between year within shore:\n")
+  em <- 
+    emmeans::emmeans(sp.mod, ~ Year, by = 'Island_shore')
+  
+  pairs(em) %>% print()
+  
+  ## 1) Tidy pairwise tests for ggsignif
+  pairs_df <- 
+    pairs(em) %>%
+    summary(adjust = "tukey") %>%
+    as_tibble() %>%
+    separate(contrast, into = c("group1", "group2"), sep = " - ") %>%
+    mutate(
+      # make sure group names match x-axis categories exactly
+      group1 = as.character(group1) %>% str_remove("^Year"),
+      group2 = as.character(group2) %>% str_remove("^Year"),
+      label  = paste0("p=", scales::pvalue(p.value))) %>% 
+    mutate(label = ifelse(label == 'p=<0.001', 'p<0.001', label))
+  
+  ## 2) Give each comparison a y position per Island_shore so brackets don’t overlap
+  yr_tops <- 
+    alpha_div %>%
+    group_by(Island_shore) %>%
+    summarise(y_top = max(eval(sym(mod_var[i])), 
+                          na.rm = TRUE), .groups = "drop")
+  
+  range_y <- 
+    diff(range(alpha_div %>% 
+                 select(mod_var[i]) %>% 
+                 st_drop_geometry(), na.rm = TRUE))
+  
+  pairs_df <- 
+    pairs_df %>%
+    left_join(yr_tops, by = "Island_shore") %>%
+    group_by(Island_shore) %>%
+    mutate(
+      # stack 3 comparisons above the tallest box for that Island_shore
+      y_position = y_top + (row_number()) * (0.06 * range_y)
+    ) %>%
+    ungroup()
+  
+  ## 3) Plot with ggsignif (manual = TRUE)
+  p <-
+    ggplot(alpha_div, aes(x = Year, y = !!sym(mod_var[i]), color = Year)) +
+    geom_boxplot(outlier.shape = NA, alpha = 0.9, size=0.8) +
+    geom_quasirandom(size = 2.5, alpha = 0.3, stroke = NA) +
+    scale_color_manual(values = year_colors) +
+    facet_wrap(~ Island_shore) +
+    ggsignif::geom_signif(
+      data = pairs_df,
+      aes(xmin = group1, xmax = group2, annotations = label, y_position = y_position),
+      inherit.aes = FALSE,
+      manual = TRUE,          # <-- REQUIRED when mapping via data frame
+      tip_length = 0.01,
+      vjust = 0.2,
+      textsize = 3.6) +
+    labs(y = labels[i],#expression("Ammonia ("*mu*"M)"),
+         x = 'Year') +
+    theme_bw() +
+    boxplot_theme
+  
+  #print(p)
+  
+  ggsave(plot = p, 
+       filename = paste0('./output/plots/', 
+                         mod_var[i],
+                         '_shore_across_years_bxplt_21.22.23.png'),
+       dpi = 1000,
+       width = 7,
+       height = 5)
+  
+}
+
+```

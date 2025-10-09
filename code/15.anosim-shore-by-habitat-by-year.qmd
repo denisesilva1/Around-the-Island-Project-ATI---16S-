@@ -1,0 +1,121 @@
+---
+title: "Pairwise ANOSIM"
+format: 
+  html:
+    self-contained: true
+editor: source
+editor_options: 
+  chunk_output_type: console
+---
+
+## ANOSIM results (Year × Shore within each Habitat): 
+
+**Bay:** 
+
+* Almost all contrasts are NA because at least one group had <3 samples. 
+* The only evaluable pair—2021.N vs 2023.N—had a moderate R = 0.41 but was not significant (BH-adjusted p = 0.114), so no supported difference in Bay with current replication.
+
+**Fringing reef:** 
+
+* Many contrasts are statistically significant after BH correction with small–moderate effect sizes (typical R ≈ 0.09–0.28). 
+* Stronger separations frequently involve 2023.N (e.g., vs 2022.SW/2021.SW/2021.SE/2022.SE; R ≈ 0.23–0.27, adj. p ≤ 0.002–0.005). 
+* Within-year, same-shore contrasts (e.g., 2021.SE vs 2021.SW) tend to be small and non-significant (R near 0, adj. p ≫ 0.05). 
+* Overall summary: Fringing reef communities show consistent but modest composition shifts across Year × Shore, especially for 2023.N.
+
+**Mid lagoon:** 
+
+* This habitat shows the clearest and largest differences overall. 
+* Numerous contrasts are highly significant with large effect sizes—several R ≥ 0.6–0.85 (e.g., 2023.SE vs 2022.SW, 2023.N vs 2022.SW, 2022.N vs 2022.SW; all adj. p ≈ 0.0016). 
+* Even many year-to-year, same-shore comparisons (e.g., 2021.N vs 2022.N R = 0.22; 2021.N vs 2023.N R = 0.24) are significant with small–moderate effects. 
+* Overall summary: Mid-lagoon communities exhibit pronounced structure by Year × Shore, with especially large separations when SW in 2022–2023 is involved.
+
+**Reef crest:** 
+
+* A broad pattern of significant differences with moderate–large R (many R = 0.30–0.77, adj. p ≤ 0.005). 
+* Largest effects again involve contrasts with SW (e.g., 2021.N vs 2022.SW, 2023.N vs 2022.SW, 2023.SE vs 2022.SW). 
+* Year-to-year same-shore comparisons (e.g., 2021.N vs 2022.N R = 0.20; 2022.N vs 2023.N R = 0.17) are smaller but still significant. 
+* Overall summary: Reef crest communities show strong compositional separation across Year × Shore, especially vs SW.
+
+**Reef pass:** 
+
+* Several contrasts have moderate R (≈0.3–0.56) but do not remain significant after BH correction (many adj. p ~0.10–0.26), and some use limited permutations (e.g., nperm_used = 55–285) due to small group sizes. 
+* Overall summary: There are suggestive patterns at Reef pass, but insufficient replication/permutation depth limits statistical support after multiple-testing correction.
+
+**Summary:**
+
+* With adequate replication, Mid lagoon and Reef crest show robust, significant community differences across Year × Shore, often large in magnitude.
+* Fringing reef shows widespread but smaller significant differences.
+* Reef pass shows trends without strong corrected significance, likely due to small n and limited permutations.
+* Bay cannot be interpreted (nearly all contrasts skipped for n < 3).
+
+```{r setup, include=FALSE}
+# Set global options for all chunks
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+### Table of within habitat, pairwise shore and year comparisons:
+
+| Habitat        | n_tests | n_sig | Proportion significant | Median R (significant) |
+|----------------|---------|-------|-------------------------|-------------------------|
+| Bay            | 1       | 0     | 0.0                     | —                       |
+| Fringing reef  | 5       | 2     | 0.4                     | 0.27                    |
+| Mid lagoon     | 4       | 2     | 0.5                     | 0.83                    |
+| Reef crest     | 4       | 4     | 1.0                     | 0.21                    |
+| Reef pass      | 4       | 0     | 0.0                     | —                       |
+
+
+## Data prep
+
+```{r data, warning=F, message=F, eval=T}
+#| code-fold: true
+
+library(tidyverse)
+library(phyloseq)
+library(vegan)
+#library(pairwiseAdonis)
+library(ggplot2)
+library(RColorBrewer)
+
+source('./code/pairwise_anosim.R')
+
+habitat_colors <- brewer.pal(5, "Set1")
+
+level <- 'asv'; level2 <- 'ASV'
+
+physeq <- 
+  readr::read_rds(paste0('./data/ati-physeq-rrfy-', level2, '.rds')) 
+
+sample_data(physeq)$Year <- factor(sample_data(physeq)$Year,
+                                   levels = c("2021","2022","2023"))
+
+```
+
+## Pairwise ANOSIM
+
+```{r anosim, warning=F, message=F, eval=T}
+
+library(knitr)
+
+res <- 
+  pairwise_anosim_by_habitat(
+  physeq,
+  dist_method = "bray",
+  max_perm = 999,
+  min_group_n = 3,
+  seed = 20252708
+)
+
+# BH-adjust p-values within each habitat
+res_adj <- res %>%
+  group_by(Habitat) %>%
+  mutate(p_adj_BH = p.adjust(p, method = "BH")) %>%
+  ungroup() %>% 
+  dplyr::select(Habitat, comparison, n1, n2, R, p, nperm_used, p_adj_BH)
+
+res_adj %>% kable(n = nrow(.))
+
+```
+
