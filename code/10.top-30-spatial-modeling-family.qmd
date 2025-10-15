@@ -1,0 +1,195 @@
+---
+title: "Spatial regression top 30 abundant family"
+format: 
+  html:
+    self-contained: true
+editor: source
+editor_options: 
+  chunk_output_type: console
+---
+
+## Data prep
+
+```{r data, warning=F, message=F}
+#| code-fold: true
+
+library(tidyverse)
+library(phyloseq)
+library(spmodel)
+library(sf)
+library(RColorBrewer)
+library(colorspace)
+
+topn <- 30
+level <- 'family'; level2 <- 'Family'
+#level <- 'genus'; level2 <- 'Genus'
+
+pal <- brewer.pal(12,"Paired") 
+pal <- colorRampPalette(pal)(topn)
+
+top_taxa <- readr::read_rds(paste0('./data/top-', topn,'-', level, '.rds'))
+
+physeq_rrfy <- 
+  readr::read_rds(paste0('./data/ati-physeq-rrfy-', level2, '.rds'))
+
+physeq_rrfy <- prune_taxa(top_taxa, physeq_rrfy)
+
+# Access the current tax_table and ensure it's a matrix
+tax_table_mod <- tax_table(physeq_rrfy) %>% data.frame()
+
+# Apply the transformation to handle "Incertae Sedis"
+pattern <- "Incertae Sedis|^uncultured"
+
+# Apply the transformation row by row
+tax_table_mod <- apply(tax_table_mod, 1, function(taxa) {
+  # Identify the lowest known taxonomic level (non-NA, not matching the pattern)
+  lowest_known_idx <- which(!is.na(taxa) & !grepl(pattern, taxa, ignore.case = TRUE))
+  
+  if (length(lowest_known_idx) > 0) {
+    # Get the rank and name of the lowest known taxon
+    lowest_rank <- colnames(tax_table_mod)[max(lowest_known_idx)]
+    lowest_name <- taxa[max(lowest_known_idx)]
+    
+    # Replace only unknown levels (NA or matching the pattern) with "Unclassified, <rank> - <name>"
+    for (i in seq_along(taxa)) {
+      if (is.na(taxa[i]) || grepl(pattern, taxa[i], ignore.case = TRUE)) {
+        #taxa[i] <- paste0("Unclassified, ", lowest_rank, " - ", lowest_name)
+        taxa[i] <- lowest_name
+      }
+    }
+  }
+  
+  return(taxa)  # Return the modified taxon row
+})
+
+tax_table_mod <- t(tax_table_mod)  # Transpose back to original orientation
+rownames(tax_table_mod) <- taxa_names(physeq_rrfy)  # Restore original row names
+colnames(tax_table_mod) <- colnames(tax_table(physeq_rrfy))  # Restore column names
+# Assign the modified taxonomy table back to the phyloseq object
+tax_table(physeq_rrfy) <- as.matrix(tax_table_mod)
+
+abundances <- 
+  phyloseq::sample_data(physeq_rrfy) %>% 
+  as_tibble() %>% 
+  dplyr::select(Site, Latitude, Longitude, Year, Habitat, Island_shore,
+                Silicate, Percent_N, Phosphate, Ammonia, Nitrite_plus_Nitrate,
+                Distance_to_shore, Distance_to_population_center,
+                dN15, dC13) %>%
+  dplyr::mutate(Site = as.factor(Site),
+                Year = as.factor(Year),
+                Habitat = factor(Habitat,
+                                 levels = c('Mid lagoon','Fringing reef',
+                                            'Bay','Reef crest','Reef pass'))) %>% 
+  bind_cols(
+    phyloseq::otu_table(physeq_rrfy) %>% 
+      t()) %>% 
+  na.omit() %>% 
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) %>% 
+  st_transform(crs = 3305)
+
+if(level2 == 'Family'){
+  taxa <- tax_table(physeq_rrfy)@.Data %>% 
+    data.frame() %>% 
+    dplyr::mutate(asv = row.names(.)) %>% 
+    dplyr::select(asv, Family)
+  
+  colnames(abundances)[grep(paste(taxa$asv, collapse = "|"),
+                            colnames(abundances))] <- taxa$Family
+} else {
+  taxa <- tax_table(physeq_rrfy)@.Data %>% 
+    data.frame() %>% 
+    dplyr::mutate(asv = row.names(.)) %>% 
+    dplyr::select(asv, Genus)
+  colnames(abundances)[grep(paste(taxa$asv, collapse = "|"),
+                            colnames(abundances))] <- taxa$Genus
+}
+
+```
+
+## Model and plot log abundances of top families
+
+```{r model_plot, warning=F, message=F, eval=T}
+#| code-fold: true
+
+#Geospatial layers:
+bbox <- st_bbox(abundances)
+moorea <- st_read('./data/map-data/moorea.shp', quiet=TRUE)
+
+#set theme parameters
+mytheme <- theme(legend.position="bottom",
+                 axis.title.x = element_blank(),
+                 axis.title.y = element_blank(),
+                 legend.text=element_text(size=12),
+                 legend.title=element_text(size=12)) 
+
+if(level2 == 'Family'){
+  taxa <- taxa$Family
+} else {
+  taxa <- taxa$Genus
+}
+
+taxa <- taxa[order(taxa)]
+
+predictors <- 'Habitat + Year + Silicate + Percent_N + Phosphate + Ammonia + Nitrite_plus_Nitrate + Distance_to_shore + Distance_to_population_center + dN15 + dC13' 
+for(i in 1:length(taxa)){
+  #for(i in 1:1){
+  print(taxa[i])
+  
+  color <- pal[i]
+  # Lighten the color
+  lighter_color <- lighten(color, amount = 0.8)
+  # Darken the color
+  #darker_color <- darken(color, amount = 0.1)
+  
+  map <-   ggplot() +
+    geom_sf(data=moorea, fill='white', color='black') +
+    geom_sf(data=abundances, aes(color=.data[[taxa[i]]]+1), size=3, alpha=1) +
+    theme_bw() +
+    mytheme + 
+    scale_color_gradient2(low = lighter_color,
+                          #mid = pal[i],
+                          high = color,
+                          taxa[i], 
+                          #direction = 1, 
+                          trans = "log10") +
+    guides(color = guide_colourbar(barwidth = 15)) +
+    facet_wrap(~Year, ncol = 3)
+  print(map)
+  
+    taxon <- paste0("`", taxa[i], "`")  # Wrap in backticks
+  formula <- as.formula(paste("log10(", taxon, " + 1) ~", predictors))
+  
+  mod <- splm(formula = formula,
+              data = abundances,
+              random = ~ Site,
+              estmethod='ml',
+              spcov_type = 'none')
+  
+  sp.mod <- splm(formula = formula, 
+                 data = abundances,
+                 #partition_factor = ~ Island_shore,
+                 random = ~ Site,
+                 estmethod='ml',
+                 spcov_type = 'gaussian') 
+  
+  print('Compare spatial and non-spatial models')
+  glances(mod, sp.mod) %>% print()
+  
+  print('Leave-one-out assessment')
+  bind_rows(
+    loocv(mod) %>% mutate(Model = "non-spatial"),
+    loocv(sp.mod) %>% mutate(Model = "spatial")
+  ) %>% print()
+  
+  sp.mod <- splm(formula = formula, 
+                 data = abundances,
+                 #partition_factor = ~ Island_shore,
+                 random = ~ Site,
+                 #estmethod='ml',
+                 spcov_type = 'gaussian') 
+  
+  print(summary(sp.mod))
+  
+}
+
+```

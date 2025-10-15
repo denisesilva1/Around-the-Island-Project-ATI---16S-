@@ -1,0 +1,289 @@
+---
+title: "Spatial regression - ammonia, nitrate + nitrite, phosphate"
+format: 
+  html:
+    self-contained: true
+editor: source
+editor_options: 
+  chunk_output_type: console
+---
+
+## Data prep
+
+```{r data, warning=F, message=F}
+#| code-fold: true
+
+library(tidyverse)
+library(phyloseq)
+library(spmodel)
+library(sf)
+library(emmeans)
+library(ggbeeswarm)
+library(ggsignif)
+
+level <- 'family'; level2 <- 'Family'
+
+nutrients <- 
+  readr::read_rds(paste0('./data/ati-physeq-rrfy-', level2, '.rds')) %>% 
+  sample_data() %>% 
+  data.frame() %>% 
+  dplyr::select(Year, Site, Habitat, Ammonia, Nitrite_plus_Nitrate, 
+                Phosphate, Latitude, Longitude) %>% 
+  dplyr::mutate(Year = as.factor(Year)) %>% 
+  na.omit() %>% 
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) %>% 
+  st_transform(crs = 3305)
+
+boxplot_theme <-
+  theme(
+    axis.title.x = element_text(size = 16, face = "bold"),
+    axis.title.y = element_text(size = 16, face = "bold"),
+    axis.text.x  = element_text(size = 14),
+    axis.text.y  = element_text(size = 14)
+  )
+
+```
+
+## Model and plot ammonia
+
+```{r ammonia, warning=F, message=F, eval=T}
+#| code-fold: true
+
+formula <-
+  Ammonia ~
+  Year + 
+  Habitat
+
+sp.mod <- splm(formula = formula, 
+               data = nutrients,
+               random = ~ Site,
+               spcov_type = 'gaussian') 
+
+summary(sp.mod)
+
+em.ammonia <- emmeans::emmeans(sp.mod, ~ Year)
+
+print(em.ammonia)
+
+pairs(em.ammonia)
+
+plot(pairs(em.ammonia)) +
+  theme_bw() +
+  geom_vline(xintercept = 0)
+
+em.ammonia <- emmeans::emmeans(sp.mod, ~ Habitat)
+
+print(em.ammonia)
+
+pairs(em.ammonia)
+
+plot(pairs(em.ammonia)) +
+  theme_bw() +
+  geom_vline(xintercept = 0)
+
+# letters_df <- data.frame(
+#   Year = factor(c("2021", "2022", "2023"), 
+#                 levels = levels(nutrients$Year)),
+#   Ammonia = rep(4, 3),  # y position just above your ylim or max value
+#   label = c("a", "b", "a")
+# )
+
+nutrients$Year <- factor(nutrients$Year, levels = c("2021","2022","2023"))
+
+signif_df <- data.frame(
+  group1      = c("2021","2021","2022"),
+  group2      = c("2022","2023","2023"),
+  annotations = c("p<.0.0001","p=0.327","p<.0.0001"),    # use "****" se preferir p<1e-4
+  y_position = c(3, 3.5, 4)
+)
+p <- 
+  ggplot(nutrients,
+         aes(x = Year,
+             y = Ammonia)) +
+  geom_boxplot(width = 0.4, 
+               color = '#D72622',
+               outlier.shape = NA, alpha = 0.9, size=0.8) +
+  geom_quasirandom(size = 2.5, color = '#D72622',
+                   alpha = 0.3, stroke = NA) +
+  #ylim(0, 4) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  # geom_text(data = letters_df, aes(x = Year, y = Ammonia, label = label),
+  #           inherit.aes = FALSE, vjust = -0.2, size = 5)
+  #scale_y_continuous(expand = expansion(mult = c(0.02, 0.15))) +
+  ggsignif::geom_signif(
+    data = signif_df,
+    aes(xmin = group1, xmax = group2,
+        annotations = annotations, y_position = y_position),
+    manual = TRUE,
+    tip_length = 0.01,
+    textsize = 3.5,
+    vjust = -0.05
+  ) +
+  labs(y = expression("Ammonia ("*mu*"M)")) +
+  boxplot_theme
+
+p
+
+readr::write_rds(p, './data/combined_figures/ammonia_boxplots.rds')
+
+```
+
+## Model and plot nitrate + nitrite
+
+```{r Nitrite_plus_Nitrate, warning=F, message=F, eval=T}
+#| code-fold: true
+
+formula <-
+  Nitrite_plus_Nitrate ~
+  Year + 
+  Habitat
+
+sp.mod <- splm(formula = formula, 
+               data = nutrients,
+               random = ~ Site,
+               spcov_type = 'gaussian') 
+
+summary(sp.mod)
+
+em.nn <- emmeans::emmeans(sp.mod, ~ Year)
+
+print(em.nn)
+
+pairs(em.nn)
+
+plot(pairs(em.nn)) +
+  theme_bw() +
+  geom_vline(xintercept = 0)
+
+em.nn <- emmeans::emmeans(sp.mod, ~ Habitat)
+
+print(em.nn)
+
+pairs(em.nn)
+
+plot(pairs(em.nn)) +
+  theme_bw() +
+  geom_vline(xintercept = 0)
+
+# letters_df <- data.frame(
+#   Year = factor(c("2021", "2022", "2023"), 
+#                 levels = levels(nutrients$Year)),
+#   Nitrite_plus_Nitrate = c(1.7, 1.7, 1.7),  
+#   label = c("a", "b", "c"))
+
+nutrients$Year <- factor(nutrients$Year, levels = c("2021","2022","2023"))
+
+signif_df <- data.frame(
+  group1      = c("2021","2021","2022"),
+  group2      = c("2022","2023","2023"),
+  annotations = c("p<.0.0001","p<.0.0001","p<.0.0001"),    # use "****" se preferir p<1e-4
+  y_position = c(3, 3.5, 4)
+)
+
+signif_df <- data.frame(
+  group1      = c("2021","2021","2022"),
+  group2      = c("2022","2023","2023"),
+  annotations = c("p<.0.0001","p<.0.0001","p<.0.0001"),    # use "****" se preferir p<1e-4
+  y_position = c(1.25, 1.5, 1.75))
+
+p <- 
+  ggplot(nutrients,
+         aes(x = Year,
+             y = Nitrite_plus_Nitrate)) +
+  geom_boxplot(width = 0.4, 
+               color = '#238b45',
+               outlier.shape = NA, alpha = 0.9, size=0.8) +
+  geom_quasirandom(size = 2.5, color = '#238b45',
+                   alpha = 0.3, stroke = NA) +
+  ylim(0, 1.8) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  ggsignif::geom_signif(
+    data = signif_df,
+    aes(xmin = group1, xmax = group2,
+        annotations = annotations, y_position = y_position),
+    manual = TRUE,
+    tip_length = 0.01,
+    textsize = 3.5,
+    vjust = -0.05
+  ) +
+  labs(y = expression("Nitrite+Nitrate ("*mu*"M)")) +
+  boxplot_theme
+
+p
+
+readr::write_rds(p, './data/combined_figures/nitrate_nitrite_boxplots.rds')
+
+```
+
+## Model and plot phosphate
+
+```{r phosphate, warning=F, message=F, eval=T}
+#| code-fold: true
+
+formula <-
+  Phosphate ~
+  Year + 
+  Habitat
+
+sp.mod <- splm(formula = formula, 
+               data = nutrients,
+               random = ~ Site,
+               spcov_type = 'gaussian') 
+
+summary(sp.mod)
+
+em.phosphate <- emmeans::emmeans(sp.mod, ~ Year)
+
+print(em.phosphate)
+
+pairs(em.phosphate)
+
+plot(pairs(em.phosphate)) +
+  theme_bw() +
+  geom_vline(xintercept = 0)
+
+em.phosphate <- emmeans::emmeans(sp.mod, ~ Habitat)
+
+print(em.phosphate)
+
+pairs(em.phosphate)
+
+plot(pairs(em.phosphate)) +
+  theme_bw() +
+  geom_vline(xintercept = 0)
+
+signif_df <- data.frame(
+  group1      = c("2021","2021","2022"),
+  group2      = c("2022","2023","2023"),
+  annotations = c("0.0042","p<.0.0001","p<.0.0001"),    # use "****" se preferir p<1e-4
+  y_position = c(.25, 0.3, 0.35))
+
+p <- 
+  ggplot(nutrients,
+         aes(x = Year,
+             y = Phosphate)) +
+  geom_boxplot(width = 0.4, 
+               color = '#DF65B0',
+               outlier.shape = NA, alpha = 0.9, size=0.8) +
+  geom_quasirandom(size = 2.5, color = '#DF65B0',
+                   alpha = 0.3, stroke = NA) +
+  ylim(0.05, 0.4) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  ggsignif::geom_signif(
+    data = signif_df,
+    aes(xmin = group1, xmax = group2,
+        annotations = annotations, y_position = y_position),
+    manual = TRUE,
+    tip_length = 0.01,
+    textsize = 3.5,
+    vjust = -0.05) +
+  labs(y = expression("Phosphate ("*mu*"M)")) +
+  boxplot_theme
+
+p
+
+readr::write_rds(p, './data/combined_figures/phosphate_boxplots.rds')
+```

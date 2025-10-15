@@ -1,0 +1,168 @@
+---
+title: "ANOSIM"
+format: 
+  html:
+    self-contained: true
+editor: source
+editor_options: 
+  chunk_output_type: console
+---
+
+## Introduction & Results
+
+This analysis compares the composition across habitats (Fringing reef, Mid lagoon, Reef crest, Reef pass, Bay) within each year (2021, 2022, 2023).  
+
+### Overall Summary:
+The ANOSIM results across the years indicate varying degrees of community composition differences between habitats. While some comparisons consistently show significant separation, others exhibit variability, suggesting potential influences of temporal or spatial factors. The significant differences observed in certain habitats underscore the importance of considering habitat-specific influences on community structure, which could be crucial for ecological management and conservation strategies.
+
+Based on the ANOSIM results from 2021 to 2023, the habitats that demonstrated the most consistent differences with other habitats are the **Bay** and **Reef crest**. 
+
+#### Bay:
+- **2021**: The Bay consistently showed significant differences in community composition when compared to Fringing reef, Mid lagoon, Reef crest, and Reef pass.
+- **2022**: Significant differences were observed between Bay and Fringing reef, Mid lagoon, Reef crest, and Reef pass.
+- **2023**: The Bay continued to show significant differences with Mid lagoon, Reef crest, and Reef pass, although no significant difference was found with Fringing reef.
+
+#### Reef Crest:
+- **2021**: Significant differences were noted between Reef crest and Fringing reef, Mid lagoon, Reef pass, and Bay.
+- **2022**: Reef crest consistently showed significant differences with Fringing reef, Mid lagoon, Reef pass, and Bay.
+- **2023**: The Reef crest continued to show significant differences with Fringing reef, Mid lagoon, Reef pass, and Bay.
+
+#### Conclusion:
+Overall, the Bay and Reef crest habitats consistently exhibited significant differences when compared to other habitats across multiple years, suggesting distinct community compositions and ecological characteristics. These differences could be driven by unique environmental factors, habitat structures, or ecological processes specific to these habitats.
+
+### Details of within year comparisons:
+
+__Year 2021:__
+In 2021, the comparisons between habitats revealed a mixture of significant and non-significant differences. The "Fringing reef vs Mid lagoon" and "Fringing reef vs Reef pass" comparisons showed no significant differences, indicating similar community compositions. Conversely, significant differences were observed between "Fringing reef vs Reef crest" and "Fringing reef vs Bay", suggesting distinct ecological characteristics. The "Mid lagoon vs Reef pass" and "Mid lagoon vs Bay" comparisons also demonstrated significant differences. Furthermore, strong separation was noted between "Reef crest vs Bay" and "Reef pass vs Bay", highlighting the unique community structures in these habitats.
+
+__Year 2022:__
+The results in 2022 showed a similar pattern, with both significant and non-significant differences observed. "Fringing reef vs Mid lagoon" and "Fringing reef vs Reef pass" comparisons again showed no significant differences. However, significant differences were found between "Fringing reef vs Reef crest" and "Fringing reef vs Bay". The "Mid lagoon vs Reef pass" and "Mid lagoon vs Bay" comparisons continued to show significant separation, reinforcing the distinct community compositions. The "Reef crest vs Bay" and "Reef pass vs Bay" comparisons also indicated significant differences, underscoring unique ecological profiles.
+
+__Year 2023:__
+In 2023, the analysis revealed some shifts in community composition differences. The "Fringing reef vs Mid lagoon" and "Fringing reef vs Reef pass" comparisons did not show significant differences. Additionally, "Fringing reef vs Bay" showed no significant difference. Significant differences persisted between "Fringing reef vs Reef crest". Notably, "Mid lagoon vs Bay" continued to show strong separation, while "Reef crest vs Bay" and "Reef pass vs Bay" demonstrated significant differences, highlighting distinct community structures.
+
+
+```{r setup, include=FALSE}
+# Set global options for all chunks
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+### Table of within year, pairwise habitat comparisons:
+
+```{r, echo=F}
+library(knitr)
+
+# Create a data frame to hold the summary of ANOSIM results
+anosim_summary <- data.frame(
+  Year = c(rep("2021", 10), rep("2022", 10), rep("2023", 10)),
+  Comparison = c(
+    "Fringing reef vs Mid lagoon", "Fringing reef vs Reef crest", "Fringing reef vs Reef pass",
+    "Fringing reef vs Bay", "Mid lagoon vs Reef crest", "Mid lagoon vs Reef pass",
+    "Mid lagoon vs Bay", "Reef crest vs Reef pass", "Reef crest vs Bay", "Reef pass vs Bay",
+    "Fringing reef vs Mid lagoon", "Fringing reef vs Reef crest", "Fringing reef vs Reef pass",
+    "Fringing reef vs Bay", "Mid lagoon vs Reef crest", "Mid lagoon vs Reef pass",
+    "Mid lagoon vs Bay", "Reef crest vs Reef pass", "Reef crest vs Bay", "Reef pass vs Bay",
+    "Fringing reef vs Mid lagoon", "Fringing reef vs Reef crest", "Fringing reef vs Reef pass",
+    "Fringing reef vs Bay", "Mid lagoon vs Reef crest", "Mid lagoon vs Reef pass",
+    "Mid lagoon vs Bay", "Reef crest vs Reef pass", "Reef crest vs Bay", "Reef pass vs Bay"
+  ),
+  ANOSIM_R = c(
+    0.006734, 0.07748, -0.02284, 0.2527, 0.02942, 0.1935, 0.6757, 0.4194, 0.875, 0.3691,
+    0.0003262, 0.0867, -0.05945, 0.2767, 0.01039, 0.1875, 0.7903, 0.2534, 0.8113, 0.2971,
+    0.04294, 0.1431, -0.05052, 0.1376, 0.03241, 0.009999, 0.5816, 0.1436, 0.8284, 0.4436
+  ),
+  Significance = c(
+    0.38, 0.024, 0.604, 0.032, 0.036, 0.008, 0.001, 0.001, 0.001, 0.003,
+    0.454, 0.015, 0.8, 0.026, 0.211, 0.007, 0.001, 0.003, 0.001, 0.009,
+    0.108, 0.002, 0.759, 0.125, 0.046, 0.373, 0.001, 0.02, 0.001, 0.001
+  ),
+  Remarks = c(
+    "No significant difference", "Significant difference", "No significant difference",
+    "Significant difference", "Significant difference", "Significant difference",
+    "Significant difference", "Significant difference", "Significant difference", "Significant difference",
+    "No significant difference", "Significant difference", "No significant difference",
+    "Significant difference", "No significant difference", "Significant difference",
+    "Significant difference", "Significant difference", "Significant difference", "Significant difference",
+    "No significant difference", "Significant difference", "No significant difference",
+    "No significant difference", "Significant difference", "No significant difference",
+    "Significant difference", "Significant difference", "Significant difference", "Significant difference"
+  )
+)
+
+# Print the summary table
+kable(anosim_summary)
+
+```
+
+
+
+
+## Data prep
+
+```{r data, warning=F, message=F, eval=T}
+#| code-fold: true
+
+library(tidyverse)
+library(phyloseq)
+library(vegan)
+#library(pairwiseAdonis)
+library(ggplot2)
+library(RColorBrewer)
+
+habitat_colors <- brewer.pal(5, "Set1")
+
+level <- 'asv'; level2 <- 'ASV'
+
+physeq <- 
+  readr::read_rds(paste0('./data/ati-physeq-rrfy-', level2, '.rds')) 
+
+sample_data(physeq)$Year <- factor(sample_data(physeq)$Year,
+                                   levels = c("2021","2022","2023"))
+
+years <- c("2021","2022","2023")
+```
+
+## Pairwise PERMANOVA
+
+```{r anosim, warning=F, message=F, eval=T}
+#| code-fold: true
+
+for (i in 1:length(years)) {
+  cat("=== Year:", years[i], "===\n")
+  
+  # --- subset data for this year ---
+  phy_sub  <- subset_samples(physeq, Year == years[i])
+  dist_sub <- phyloseq::distance(phy_sub, method = "bray")
+  meta_sub <- as(sample_data(phy_sub), "data.frame")
+  
+  # --- pairwise ANOSIM ---
+  cat("\nPairwise ANOSIM (Habitat):\n")
+  habitats <- unique(meta_sub$Habitat)
+  habitat_combinations <- combn(habitats, 2, simplify = FALSE)
+  
+  # --- pairwise ANOSIM ---
+  cat("\nPairwise ANOSIM (Habitat):\n")
+  habitats <- unique(meta_sub$Habitat)
+  habitat_combinations <- combn(habitats, 2, simplify = FALSE)
+  
+  for (j in 1:length(habitat_combinations)) {
+    cat("Comparison between habitats:", habitat_combinations[[j]][1], " vs ", habitat_combinations[[j]][2],"\n")
+    subset_indices <- which(meta_sub$Habitat %in% habitat_combinations[[j]])
+    dist_matrix <- as.matrix(dist_sub)
+    subset_dist <- dist_matrix[subset_indices, subset_indices]
+    subset_groups <- meta_sub$Habitat[subset_indices]
+    
+    set.seed(20252708)
+    anosim_result <- anosim(subset_dist, subset_groups)
+    print(summary(anosim_result))
+    cat("\n")
+  }
+}
+
+
+
+```
+

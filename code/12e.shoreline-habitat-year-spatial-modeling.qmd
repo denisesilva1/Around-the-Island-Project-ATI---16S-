@@ -1,0 +1,436 @@
+---
+title: "Shore spatial regression - water chem + alpha diversity"
+format: 
+  html:
+    self-contained: true
+editor: source
+editor_options: 
+  chunk_output_type: console
+---
+
+## Summary of Results
+
+### Table: R² and Predictive R²
+
+| Variable                         | R²    | Predictive R² |
+|----------------------------------|:-----:|:-------------:|
+| Microbial_Richness               | 0.333 |     0.435     |
+| Microbial_Chao1                  | 0.402 |     0.466     |
+| Microbial_Shannon_Diversity      | 0.182 |     0.437     |
+| Microbial_Phylogenetic_Diversity | 0.261 |     0.481     |
+| Microbial_Evenness               | 0.178 |     0.381     |
+| Ammonia                          | 0.321 |     0.498     |
+| Nitrite_plus_Nitrate             | 0.211 |     0.421     |
+| Phosphate                        | 0.280 |     0.322     |
+| dN15                             | 0.486 |     0.671     |
+| dC13                             | 0.465 |     0.669     |
+
+
+1. Ammonia (µM)
+
+* Patterns:
+
+  * Highest in 2022 across SE and SW shores.
+  
+  * Bays particularly elevated in 2022 (SW ~72 µM).
+  
+  * Reefs and lagoons more stable (40–55 µM).
+
+* Takeaway: Strong 2022 peak, especially in bays.
+
+2. Nitrite + Nitrate (µM)
+
+* Patterns:
+
+  * Elevated on north shore relative to SE and SW.
+  
+  * Peaks in 2022, especially in fringing reefs and lagoons.
+  
+  * Bays highly variable across years.
+
+* Takeaway: 2022 enrichment signal, bays most variable.
+
+3. Phosphate (µM)
+
+* Patterns:
+
+  * Reefs consistently higher than bays.
+  
+  * Clear 2022 peak, followed by 2023 decline.
+  
+  * SE shore generally lowest phosphate values.
+
+* Takeaway: Habitat structured (reef > bay) with interannual variability.
+
+4. δ¹⁵N (‰)
+
+* Patterns:
+
+  * Marked interannual variability, with 2022 enrichment.
+  
+  * Bays had the largest swings; reefs more stable.
+
+* Takeaway: Strong year effect with enrichment in 2022.
+
+5. δ¹³C (‰)
+
+* Patterns:
+
+  * Subtle habitat differences, generally stable through time.
+  
+  * Slight enrichment in reef habitats in 2022.
+
+* Takeaway: Relatively weak structuring compared to δ¹⁵N.
+
+6. Microbial Richness
+
+* Patterns:
+
+  * Fringing reefs highest (up to 500), bays lowest (190–300).
+  
+  * Peak in 2022, followed by declines in 2023.
+
+* Takeaway: Clear 2022 peak, reef habitats consistently higher.
+
+7. Chao1 Richness
+
+* Patterns:
+
+  * Mirrors observed richness, with higher estimates overall.
+  
+  * Fringing reefs highest, bays lowest.
+  
+  * 2022 peak evident across habitats.
+
+* Takeaway: Strong reef > bay pattern, 2022 peak.
+
+8. Shannon Diversity
+
+* Patterns:
+
+  * Reefs ~0.74–0.77, bays lower (~0.68–0.70).
+  
+  * 2022 slightly lower than 2021 and 2023.
+
+* Takeaway: Habitat structured, weaker year signal.
+
+9. Phylogenetic Diversity
+
+* Patterns:
+
+  * Fringing reefs consistently highest (59–74), bays lowest (31–49).
+  
+  * 2022 peak, followed by decline in 2023.
+
+* Takeaway: Strong reef > bay structuring with interannual variability.
+
+10. Microbial Evenness
+
+* Patterns:
+
+  * Reefs and lagoons more even than bays.
+  
+  * Subtle year-to-year variation, with 2022 slightly higher.
+
+* Takeaway: More stable than richness/diversity, but still shows habitat and year effects.
+
+```{r table, warning=F, message=F, echo=F}
+library(knitr)
+
+results_summary <- data.frame(
+  Variable = c(
+    "Ammonia (µM)", "Nitrite+Nitrate (µM)", "Phosphate (µM)",
+    "δ15N (‰)", "δ13C (‰)",
+    "Microbial Richness", "Chao1 Richness",
+    "Shannon Diversity", "Phylogenetic Diversity", "Microbial Evenness"
+  ),
+  KeyPatterns = c(
+    "2022 peak, bays highest variability",
+    "2022 enrichment, bays variable, reefs stable",
+    "Reefs > bays, 2022 peak, 2023 decline",
+    "Strong 2022 enrichment, bays most variable",
+    "Stable, weak structure, slight 2022 reef enrichment",
+    "Reefs > bays, strong 2022 peak",
+    "Mirrors richness, higher estimates, 2022 peak",
+    "Reefs consistently higher; 2022 slightly lower",
+    "Reefs > bays, 2022 peak then decline",
+    "Reefs/lagoons more even; subtle 2022 increase"
+  )
+)
+
+kable(results_summary,
+      caption = "Summary of spatial regression results across variables with reported pseudo-R² values.")
+
+
+```
+
+
+```{r setup, include=FALSE}
+# Set global options for all chunks
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## Data prep
+
+```{r data, warning=F, message=F}
+#| code-fold: true
+
+library(tidyverse)
+library(phyloseq)
+library(spmodel)
+library(sf)
+library(emmeans)
+library(ggbeeswarm)
+library(ggsignif)
+library(RColorBrewer)
+
+
+shore_colors <- c('#1f78b4', '#fb9a99', '#33a02c')
+year_colors <- c('#0868AC','#9E9AC8','#FEB24C')
+habitat_colors <- brewer.pal(5, "Set1")
+
+level <- 'asv'; level2 <- 'ASV'
+
+alpha_div <-
+  readr::read_rds(file = paste0('./data/ati-alpha-diversity-metrics-', level, '.rds')) %>% 
+  data.frame() %>% 
+  dplyr::select(Year, Site, Habitat, Island_shore, Ammonia, dN15, dC13, 
+                Nitrite_plus_Nitrate, Phosphate, Latitude, Longitude,
+                Microbial_Richness, Microbial_Chao1, Microbial_Shannon_Diversity, 
+                Microbial_Phylogenetic_Diversity, Microbial_Evenness) %>% 
+  dplyr::mutate(Year = as.character(Year)) %>% 
+  na.omit() %>% 
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) %>% 
+  st_transform(crs = 3305)
+
+boxplot_theme <-
+  theme(
+    axis.title.x = element_text(size = 16, face = "bold"),
+    axis.title.y = element_text(size = 16, face = "bold"),
+    axis.text.x  = element_text(size = 14),
+    axis.text.y  = element_text(size = 14),
+    legend.position = 'none'
+  )
+
+mod_var <- 
+  c('Ammonia','Nitrite_plus_Nitrate','Phosphate','dN15','dC13',
+    'Microbial_Richness','Microbial_Chao1','Microbial_Shannon_Diversity',
+    'Microbial_Phylogenetic_Diversity','Microbial_Evenness')
+
+labels <-
+  c(expression("Ammonia ("*mu*"M)"), expression("Nitrite+Nitrate ("*mu*"M)"),
+    expression("Phosphate ("*mu*"M)"), "δ15N (\u2030)", "δ13C (\u2030)",
+    "Microbial Richness", "Chao1 Richness", "Shannon Diversity", 
+    "Phylogenetic Diversity", "Microbial Evenness")
+
+```
+
+## Models and plots
+
+```{r models, warning=F, message=F, eval=T}
+#| code-fold: true
+
+for(i in 1:length(mod_var)){
+  
+  cat("=== Variable:", mod_var[i], "===\n")
+  
+  formula <- 
+    as.formula(paste(mod_var[i], "~ Year * Island_shore * Habitat"))
+  
+  sp.mod <- 
+    spmodel::splm(formula = formula,
+                  data = alpha_div,
+                  random = ~ Site,
+                  estmethod = 'ml',
+                  spcov_type = 'gaussian')
+  
+  cat("\nModel metrics:\n")
+  spmodel::glance(sp.mod) %>% print()
+  #spmodel::loocv(sp.mod) %>% print()
+  cat("\nPredictive r-squared:\n")
+  cor((sp.mod$fitted$response + sp.mod$fitted$spcov$de), sp.mod$obdata[mod_var[i]])^2 %>% print()
+  
+  cat("\nemmeans pairwise comparison among years:\n")
+  
+  # ---- 1) emmeans  ----
+  em <- emmeans::emmeans(sp.mod, ~ Habitat, by = c('Year', 'Island_shore'))
+  
+  print(em)
+  print(pairs(em))
+  
+  # # ---- 2) Tidy pairwise tests for ggsignif (no facetting needed) ----
+  # pairs_df <- pairs(em) %>%
+  #   summary(adjust = "tukey") %>%
+  #   tibble::as_tibble() %>%
+  #   tidyr::separate(contrast, into = c("group1","group2"), sep = " - ") %>%
+  #   mutate(
+  #     group1 = as.character(group1),
+  #     group2 = as.character(group2),
+  #     # pretty p-value labels
+  #     label  = scales::pvalue(p.value),
+  #     label  = ifelse(label == "<0.001", "p<0.001", paste0("p=", label))
+  #   )
+  # 
+  # # y positions: stack 3 brackets above the tallest box
+  # y_base  <- max(alpha_div[[mod_var[i]]], na.rm = TRUE)
+  # range_y <- diff(range(alpha_div[[mod_var[i]]], na.rm = TRUE))
+  # pairs_df <- pairs_df %>%
+  #   arrange(p.value) %>%                           # optional: tallest bracket for smallest p
+  #   mutate(y_position = y_base + row_number() * (0.06 * range_y),
+  #          group1 = group1 %>% str_remove("^Year"),
+  #          group2 = group2 %>% str_remove("^Year"))
+  # 
+  # # ---- 3) Plot ----
+  # p <-
+  # ggplot(alpha_div, aes(x = Year, y = .data[[mod_var[i]]], color = Year)) +
+  #   geom_boxplot(outlier.shape = NA, alpha = 0.9, size = 0.8) +
+  #   geom_quasirandom(size = 2.3, alpha = 0.35, stroke = NA) +
+  #   scale_color_manual(values = year_colors, 
+  #                      guide = "none") +
+  #   ggsignif::geom_signif(
+  #     data = pairs_df,
+  #     aes(xmin = group1, xmax = group2, annotations = label, y_position = y_position),
+  #     inherit.aes = FALSE,
+  #     manual = TRUE,
+  #     tip_length = 0.01,
+  #     vjust = 0.2,
+  #     textsize = 3.6
+  #   ) +
+  #   labs(x = 'Year', y = labels[i]) +
+  #   theme_bw() 
+  # 
+  # 
+  # print(p)
+  # 
+  # ggsave(plot = p, 
+  #        filename = paste0('./output/plots/', 
+  #                          mod_var[i],
+  #                          '_across_years_bxplt_21.22.23.png'),
+  #        dpi = 1000,
+  #        width = 5,
+  #        height = 4)
+  # 
+  # cat("\nemmeans pairwise comparison among shores:\n")
+  # 
+  # # ---- 1) emmeans by Island shore ----
+  # em <- emmeans::emmeans(sp.mod, ~ Island_shore)
+  # 
+  # print(em)
+  # print(pairs(em))
+  # 
+  # # ---- 2) Tidy pairwise tests for ggsignif (no facetting needed) ----
+  # pairs_df <- pairs(em) %>%
+  #   summary(adjust = "tukey") %>%
+  #   tibble::as_tibble() %>%
+  #   tidyr::separate(contrast, into = c("group1","group2"), sep = " - ") %>%
+  #   mutate(
+  #     group1 = as.character(group1),
+  #     group2 = as.character(group2),
+  #     # pretty p-value labels
+  #     label  = scales::pvalue(p.value),
+  #     label  = ifelse(label == "<0.001", "p<0.001", paste0("p=", label))
+  #   )
+  # 
+  # # y positions: stack 3 brackets above the tallest box
+  # y_base  <- max(alpha_div[[mod_var[i]]], na.rm = TRUE)
+  # range_y <- diff(range(alpha_div[[mod_var[i]]], na.rm = TRUE))
+  # pairs_df <- pairs_df %>%
+  #   arrange(p.value) %>%                           # optional: tallest bracket for smallest p
+  #   mutate(y_position = y_base + row_number() * (0.06 * range_y),
+  #          group1 = group1 %>% str_remove("^Year"),
+  #          group2 = group2 %>% str_remove("^Year"))
+  # 
+  # # ---- 3) Plot ----
+  # p <-
+  # ggplot(alpha_div, aes(x = Island_shore, y = .data[[mod_var[i]]], color = Island_shore)) +
+  #   geom_boxplot(outlier.shape = NA, alpha = 0.9, size = 0.8) +
+  #   geom_quasirandom(size = 2.3, alpha = 0.35, stroke = NA) +
+  #   scale_color_manual(values = shore_colors, 
+  #                      guide = "none") +
+  #   ggsignif::geom_signif(
+  #     data = pairs_df,
+  #     aes(xmin = group1, xmax = group2, annotations = label, y_position = y_position),
+  #     inherit.aes = FALSE,
+  #     manual = TRUE,
+  #     tip_length = 0.01,
+  #     vjust = 0.2,
+  #     textsize = 3.6
+  #   ) +
+  #   labs(x = 'Island Shore', y = labels[i]) +
+  #   theme_bw() 
+  # 
+  # print(p)
+  # 
+  # ggsave(plot = p, 
+  #        filename = paste0('./output/plots/', 
+  #                          mod_var[i],
+  #                          '_across_shore_bxplt_21.22.23.png'),
+  #        dpi = 1000,
+  #        width = 5,
+  #        height = 5)
+  # 
+  #   cat("\nemmeans pairwise comparison among habitats:\n")
+  # 
+  # # ---- 1) emmeans by Habitat ----
+  # em <- emmeans::emmeans(sp.mod, ~ Habitat)
+  # 
+  # print(em)
+  # print(pairs(em))
+  # 
+  # # ---- 2) Tidy pairwise tests for ggsignif (no facetting needed) ----
+  # pairs_df <- pairs(em) %>%
+  #   summary(adjust = "tukey") %>%
+  #   tibble::as_tibble() %>%
+  #   tidyr::separate(contrast, into = c("group1","group2"), sep = " - ") %>%
+  #   mutate(
+  #     group1 = as.character(group1),
+  #     group2 = as.character(group2),
+  #     # pretty p-value labels
+  #     label  = scales::pvalue(p.value),
+  #     label  = ifelse(label == "<0.001", "p<0.001", paste0("p=", label))
+  #   )
+  # 
+  # # y positions: stack 3 brackets above the tallest box
+  # y_base  <- max(alpha_div[[mod_var[i]]], na.rm = TRUE)
+  # range_y <- diff(range(alpha_div[[mod_var[i]]], na.rm = TRUE))
+  # pairs_df <- pairs_df %>%
+  #   arrange(p.value) %>%                           # optional: tallest bracket for smallest p
+  #   mutate(y_position = y_base + row_number() * (0.06 * range_y),
+  #          group1 = group1 %>% str_remove("^Year"),
+  #          group2 = group2 %>% str_remove("^Year"))
+  # 
+  # # ---- 3) Plot ----
+  # p <-
+  # ggplot(alpha_div, aes(x = Habitat, y = .data[[mod_var[i]]], color = Habitat)) +
+  #   geom_boxplot(outlier.shape = NA, alpha = 0.9, size = 0.8) +
+  #   geom_quasirandom(size = 2.3, alpha = 0.35, stroke = NA) +
+  #   scale_color_manual(values = habitat_colors, 
+  #                      guide = "none") +
+  #   ggsignif::geom_signif(
+  #     data = pairs_df,
+  #     aes(xmin = group1, xmax = group2, annotations = label, y_position = y_position),
+  #     inherit.aes = FALSE,
+  #     manual = TRUE,
+  #     tip_length = 0.01,
+  #     vjust = 0.2,
+  #     textsize = 3.6
+  #   ) +
+  #   labs(x = 'Habitat', y = labels[i]) +
+  #   theme_bw() 
+  # 
+  # print(p)
+  # 
+  # ggsave(plot = p, 
+  #        filename = paste0('./output/plots/', 
+  #                          mod_var[i],
+  #                          '_across_habitat_bxplt_21.22.23.png'),
+  #        dpi = 1000,
+  #        width = 5,
+  #        height = 5)
+  
+}
+
+```

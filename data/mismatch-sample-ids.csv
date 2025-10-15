@@ -1,0 +1,31 @@
+"sample-id.x","Site.x","UniqueID","Habitat","Sample_type","sample-id.y","Site.y"
+"205.2_23","205","205.2_2023-April","Fringing reef","lagoon water",NA,NA
+"LTER 3 BACK_23","LTER_3_Backreef","LTER 3 BACK_2023-April","Mid lagoon","lagoon water",NA,NA
+"LTER 3 FRINGE_23","LTER_3_Fringe","LTER 3 FRINGE_2023-April","Fringing reef","lagoon water",NA,NA
+"LTER 6 FRINGE_23","LTER_6_Fringe","LTER 6 FRINGE_2023-April","Fringing reef","lagoon water",NA,NA
+"cooks-1_21","Cook 1","cooks-1_2021-May","Bay","lagoon water",NA,NA
+"lter3b_21","LTER_3_Backreef","lter3b_2021-May","Mid lagoon","lagoon water",NA,NA
+"lter3f_21","LTER_3_Fringe","lter3f_2021-May","Fringing reef","lagoon water",NA,NA
+"lter6f_21","LTER_6_Fringe","lter6f_2021-May","Fringing reef","lagoon water",NA,NA
+"OPU-1_21","OPU 1","OPU-1_2021-May","Bay","lagoon water",NA,NA
+"OPU-2_21","OPU 2","OPU-2_2021-May","Bay","lagoon water",NA,NA
+"nc1_21","nc1","nc1_NA",NA,"control",NA,NA
+"nc2_21","nc2","nc2_NA",NA,"control",NA,NA
+"nc3_21","nc3","nc3_NA",NA,"control",NA,NA
+"22_22","22","22_2022-April","Reef crest",NA,NA,NA
+"24_22","24","24_2022-April","Fringing reef",NA,NA,NA
+"52_22","52","52_2022-April","Fringing reef",NA,NA,NA
+"56_22","56","56_2022-April","Mid lagoon",NA,NA,NA
+"129_22","129","129_2022-April","Fringing reef",NA,NA,NA
+"155_22","155","155_2022-April","Fringing reef","lagoon water",NA,NA
+"Cook 1_22","Cook 1","Cook 1_2022-April","Bay",NA,NA,NA
+"LTER3BACK_22","LTER_3_Backreef","LTER3BACK_2022-April","Mid lagoon","lagoon water",NA,NA
+"LTER3FRINGE_22","LTER_3_Fringe","LTER3FRINGE_2022-April","Fringing reef","lagoon water",NA,NA
+"LTER6FRINGE_22","LTER_6_Fringe","LTER6FRINGE_2022-April","Fringing reef","lagoon water",NA,NA
+"OPU1_22","OPU 1","OPU1_2022-April","Bay","lagoon water",NA,NA
+"OPU2_22","OPU 2","OPU2_2022-April","Bay","lagoon water",NA,NA
+"126-new_22","126-new","126-new_NA",NA,"lagoon water",NA,NA
+"LTER4BACK_22","LTER_4_Backreef","LTER4BACK_NA",NA,"lagoon water",NA,NA
+"NegativeControl1-NC1_22","NegativeControl1-NC1","NegativeControl1-NC1_NA",NA,"control",NA,NA
+"NegativeControl2-NC2_22","NegativeControl2-NC2","NegativeControl2-NC2_NA",NA,"control",NA,NA
+"NegativeControl4-NC4_22","NegativeControl4-NC4","NegativeControl4-NC4_NA",NA,"control",NA,NA
