@@ -7,6 +7,8 @@ show_downloads: false
 
 header_pages:
   - index.md
+  - Methods/imdex.md
+  - Pipeline/index.md
   - Code/index.md
   - Data/index.md
   - Figures/index.md
