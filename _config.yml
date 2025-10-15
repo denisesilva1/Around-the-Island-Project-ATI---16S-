@@ -2,7 +2,7 @@ title: "Around the Island (ATI) — Moorea Island, French Polynesia - 16S rRNA g
 description: "Environmental DNA (eDNA) microbial community analyses around Moorea Island, French Polynesia"
 plugins:
   - jekyll-remote-theme
-remote_theme: slashben/jekyll-theme-jellyfish
+remote_theme:  pages-themes/cayman@v0.2.0
 show_downloads: false
 
 header_pages:
