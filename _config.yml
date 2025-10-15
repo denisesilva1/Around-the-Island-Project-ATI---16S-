@@ -2,6 +2,7 @@ title: "ATI Moorea Microbiome Project"
 description: "Environmental DNA (eDNA) microbial community analyses around Moorea Island, French Polynesia"
 plugins:
   - jekyll-remote-theme
+remote_theme: slashben/jekyll-theme-jellyfish
 show_downloads: false
 
 header_pages:
